@@ -15,29 +15,34 @@ root.geometry("1000x600")
 root.configure(bg="#2E8B57")  
 
 # ==================== HEADER (Data Entry) ====================
-header_frame = tk.Frame(root, padx=10, pady=10, bg="#3CB371")  # Medium green
+header_frame = tk.Frame(root, padx=10, pady=10, bg="#E0E0E0")  
 header_frame.pack(fill="x")
 
-tk.Label(header_frame, text="Name", bg="#3CB371", fg="white").grid(row=0, column=0)
-tk.Label(header_frame, text="Age", bg="#3CB371", fg="white").grid(row=0, column=1)
-tk.Label(header_frame, text="Distance", bg="#3CB371", fg="white").grid(row=0, column=2)
-tk.Label(header_frame, text="Accommodation", bg="#3CB371", fg="white").grid(row=0, column=3)
-tk.Label(header_frame, text="Ticket Type", bg="#3CB371", fg="white").grid(row=0, column=4)
 
+tk.Label(header_frame, text="Name", bg="#FAFAFA", fg="black").grid(row=0, column=0)
+tk.Label(header_frame, text="Age", bg="#FAFAFA", fg="black").grid(row=0, column=1)
+tk.Label(header_frame, text="Distance", bg="#FAFAFA", fg="black").grid(row=0, column=2)
+tk.Label(header_frame, text="Accommodation", bg="#FAFAFA", fg="black").grid(row=0, column=3)
+tk.Label(header_frame, text="Ticket Type", bg="#FAFAFA", fg="black").grid(row=0, column=4)
+
+#---------- input fields !!---------
 
 name_entry = tk.Entry(header_frame)
 name_entry.grid(row=1, column=0)
+
 age_entry = tk.Entry(header_frame)
 age_entry.grid(row=1, column=1)
+
 distance_entry = tk.Entry(header_frame)
 distance_entry.grid(row=1, column=2)
 
+#!!  state="readonly" makes it uneditable
 accommodation_var = tk.StringVar(value="Camping")
-accommodation_dropdown = ttk.Combobox(header_frame, textvariable=accommodation_var, values=["Camping", "Hotel", "Accommodation"])
+accommodation_dropdown = ttk.Combobox(header_frame, textvariable=accommodation_var, values=["Camping", "Hotel", "Accommodation"],state="readonly")
 accommodation_dropdown.grid(row=1, column=3)
 
 ticket_var = tk.StringVar(value="Full Access")
-ticket_dropdown = ttk.Combobox(header_frame, textvariable=ticket_var, values=["Full Access", "1 Day", "2 Day"])
+ticket_dropdown = ttk.Combobox(header_frame, textvariable=ticket_var, values=["Full Access", "1 Day", "2 Day"],state="readonly")
 ticket_dropdown.grid(row=1, column=4)
 
 def add_festival_goer():
@@ -48,29 +53,59 @@ def add_festival_goer():
     accommodation = accommodation_var.get()
     ticket_type = ticket_var.get()
 
-    if name and age and distance and accommodation and ticket_type:
-        data_handler.add_festival_goer(name, int(age), int(distance), accommodation, ticket_type)
-        update_festival_list()
-    else:
+    # !validate inputs
+    if not name or not age or not distance or not accommodation or not ticket_type:
         print("Please fill in all fields!")
+        return
+
+    try:
+        age = int(age)  # !age integer
+        distance = float(distance)  # !distance float
+        if age <= 0 or distance < 0:
+            print("Age must be positive, and distance cannot be negative!")
+            return
+    except ValueError:
+        print("Invalid input for age or distance. Please enter valid numbers!")
+        return
+
+    # !Add festival-goer to the data handler
+    data_handler.add_festival_goer(name, age, distance, accommodation, ticket_type)
+    update_festival_list()
+        
 
 tk.Button(header_frame, text="Add Festival Goer", command=add_festival_goer).grid(row=1, column=5)
 
+
 # ==================== LEFT PANE (Filter Buttons) ====================
-left_frame = tk.Frame(root, padx=10, pady=10, bg="#8FBC8F")  
+left_frame = tk.Frame(root, padx=10, pady=10, bg="#E0E0E0")  
 left_frame.pack(side="left", fill="y")
 
-tk.Label(left_frame, text="Filter by Ticket Type", bg="#8FBC8F", fg="black").pack()
+# label Ticket
+tk.Label(left_frame, text="Filter by Ticket Type", bg="#E0E0E0", fg="black").pack()
 
 def filter_and_display(ticket_type):
-    filtered_data = data_handler.filter_by_ticket(ticket_type)
+    print(f"Filtering by ticket type: {ticket_type}")
+    filtered_data = [person for person in data_handler.data if person['Ticket'] == ticket_type]
+    update_festival_list(filtered_data)
+#  buttons for Ticket
+for ticket_type, color in zip(["Full Access", "1 Day", "2 Day"], ["#F5F5F5", "#F5F5F5", "#F5F5F5"]):
+    tk.Button(left_frame, text=ticket_type, command=lambda t=ticket_type: filter_and_display(t), bg=color, fg="black").pack(fill="x")
+
+# label accommodation
+tk.Label(left_frame, text="Filter by Accommodation", bg="#E0E0E0", fg="black").pack()
+
+def filter_by_accommodation(accommodation_type):
+    print(f"Filtering by accommodation: {accommodation_type}")
+    filtered_data = [person for person in data_handler.data if person['Accommodation'] == accommodation_type]
     update_festival_list(filtered_data)
 
-for ticket_type, color in zip(["Full Access", "1 Day", "2 Day"], ["#B22222", "#2E8B57", "#DC143C"]):
-    tk.Button(left_frame, text=ticket_type, command=lambda t=ticket_type: filter_and_display(t), bg=color, fg="white").pack(fill="x")
+#  buttons for accommodation 
+for accommodation_type, color in zip(["Camping", "Hotel", "Accommodation"], ["#F5F5F5", "#F5F5F5", "#F5F5F5"]):
+    tk.Button(left_frame, text=accommodation_type, command=lambda a=accommodation_type: filter_by_accommodation(a), bg=color, fg="black").pack(fill="x")
+
 
 # ==================== RIGHT PANE (Graph Visualizations and Statistics) ====================
-right_frame = tk.Frame(root, padx=10, pady=10, bg="green")
+right_frame = tk.Frame(root, padx=10, pady=10, bg="#E0E0E0")
 right_frame.pack(side="right", fill="both", expand=True)
 
 visualization = Visualization(right_frame, data_handler)
@@ -79,28 +114,57 @@ statistics = Statistics(right_frame, data_handler)
 tk.Label(right_frame, text="Graph Visualization").pack()
 
 def show_accommodation_distribution(ticket_type):
+    """Displays the accommodation distribution for the selected ticket type."""
+    # Clear the right pane
+    for widget in right_frame.winfo_children():
+        widget.pack_forget()
+
+    # Show the graph visualization
     visualization.update_graphs(ticket_type)
-    back_button.pack(fill="x")
+
+    # Add a "Go Back" button dynamically
+    tk.Button(right_frame, text="Back to Festival Goers", command=go_back).pack(fill="x")
 
 def go_back():
-    visualization.parent.pack_forget()
-    visualization.canvas.get_tk_widget().pack_forget()
-    back_button.pack_forget()
-    update_festival_list()
+    for widget in right_frame.winfo_children():
+        widget.pack_forget()  # Remove all widgets from the right pane
+
+    # Re-add the default widgets to the right pane
+    tk.Label(right_frame, text="Graph Visualization").pack()
+    for ticket_type in ["Full Access", "1 Day", "2 Day"]:
+        tk.Button(right_frame, text=f"Show {ticket_type} Distribution", command=lambda t=ticket_type: show_accommodation_distribution(t)).pack(fill="x")
+    tk.Button(right_frame, text="Show Festival Statistics", command=show_festival_statistics).pack(fill="x")
+    back_button.pack(fill="x") 
 
 back_button = tk.Button(right_frame, text="Back to Festival Goers", command=go_back)
 
 for ticket_type in ["Full Access", "1 Day", "2 Day"]:
     tk.Button(right_frame, text=f"Show {ticket_type} Distribution", command=lambda t=ticket_type: show_accommodation_distribution(t)).pack(fill="x")
 
+def show_festival_statistics():
+    """Displays festival statistics if data is available."""
+    if not data_handler.data:
+        print("No festival-goers data available to show statistics!")
+        return
+
+    # Clear the right pane
+    for widget in right_frame.winfo_children():
+        widget.pack_forget()
+
+    # Show statistics
+    statistics.show_statistics()
+
+    # Add a "Go Back" button
+    tk.Button(right_frame, text="Back to Festival Goers", command=go_back).pack(fill="x")
+
 # Button to show visualisation
-tk.Button(right_frame, text="Show Festival Statistics", command=statistics.show_statistics).pack(fill="x")
+tk.Button(right_frame, text="Show Festival Statistics", command=show_festival_statistics).pack(fill="x")
 
 # ==================== CENTER (Festival Goers List) ====================
-center_frame = tk.Frame(root, padx=10, pady=10, bg = "#ba3c3e")
+center_frame = tk.Frame(root, padx=10, pady=10, bg = "#F5F5F5")
 center_frame.pack(expand=True, fill="both")
 
-festival_listbox = tk.Listbox(center_frame, width=80, height=15, bg = "#ba2c3e")
+festival_listbox = tk.Listbox(center_frame, width=80, height=15, bg = "#FAFAFA")
 festival_listbox.pack(fill="both", expand=True)
 
 def update_festival_list(filtered_data=None):
@@ -108,7 +172,8 @@ def update_festival_list(filtered_data=None):
     festival_listbox.delete(0, tk.END)
     data_to_display = filtered_data if filtered_data else data_handler.data
     for person in data_to_display:
-        festival_listbox.insert(tk.END, f"{person['Name']} - {person['Ticket']} - {person['Accommodation']}")
+        # !add age and distance
+        festival_listbox.insert(tk.END, f"{person['Name']} - Age: {person['Age']} - Distance: {person['Distance']} km - {person['Ticket']} - {person['Accommodation']}")
 
 update_festival_list()  # Load initial data
 
@@ -125,6 +190,7 @@ def show_gigs(day):
     for gig in gigs:
         gigs_listbox.insert(tk.END, gig)
 
+#! it is not working .   ## data handler needs to be updated?
 def show_eligible_festival_goers(event):
     """Displays festival-goers eligible for the selected gig."""
     selected_gig = gigs_listbox.get(gigs_listbox.curselection())
@@ -132,10 +198,11 @@ def show_eligible_festival_goers(event):
     eligible_festival_goers = data_handler.get_eligible_festival_goers(day)
     festival_listbox.delete(0, tk.END)
     for person in eligible_festival_goers:
-        festival_listbox.insert(tk.END, f"{person['Name']} - {person['Ticket']} - {person['Accommodation']}")
+        festival_listbox.insert(tk.END, f"{person['Name']} - Age: {person['Age']} - Distance: {person['Distance']} km - {person['Ticket']} - {person['Accommodation']}")
 
+#!!  state="readonly" makes it uneditable
 day_var = tk.StringVar(value="Day 1")
-day_dropdown = ttk.Combobox(bottom_frame, textvariable=day_var, values=["Day 1", "Day 2", "Day 3"])
+day_dropdown = ttk.Combobox(bottom_frame, textvariable=day_var, values=["Day 1", "Day 2", "Day 3"],state="readonly")
 day_dropdown.pack(side="left")
 day_dropdown.bind("<<ComboboxSelected>>", lambda event: show_gigs(day_var.get()))
 
